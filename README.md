@@ -1,1 +1,1 @@
-# PornImageDetector
+# PornDetector
