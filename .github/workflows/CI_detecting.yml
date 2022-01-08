@@ -1,0 +1,57 @@
+name: CI_detecting
+on:
+  push:
+    branches: [detecting]
+  pull_request:
+    branches: [detecting]
+
+jobs:
+# сборка проекта
+  build-project:
+    name: Build project & valgring & coverage
+    runs-on: ubuntu-latest
+    steps:
+      - run: pip install gensim
+      - uses: actions/checkout@v2
+      - run:  /bin/python3 "/home/runner/work/BroBand/BroBand/detecting/src/get_word2vec.py" &
+      - uses: Dovyski/setup-opencv-action@v1
+        with:
+          opencv-version: '4.5.4'
+      - run: sudo apt-get install -y libgtest-dev gcovr libboost-all-dev valgrind
+      - run: cd detecting && sudo wget https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.10.0%2Bcpu.zip
+      - run: cd detecting && sudo unzip libtorch-cxx11-abi-shared-with-deps-1.10.0+cpu.zip
+      - run: sudo wget https://github.com/google/googletest/archive/release-1.7.0.tar.gz && sudo tar -xf release-1.7.0.tar.gz && rm -rf release-1.7.0.tar.gz
+      - run: cd googletest-release-1.7.0
+      - run: sudo cmake
+      - run: sudo make googletest-release-1.7.0
+      - run: cd detecting && sudo mkdir build && cd build && sudo cmake .. && sudo make
+      - run: sudo valgrind --tool=memcheck --leak-check=summary --track-origins=yes --leak-check=full --error-exitcode=1 chmod a+x ./detecting/build/test/test_detect
+      - run: sudo ./detecting/build/test/test_detect
+      - run: sudo gcovr -r .. --html --html-details -o cov.html
+      - uses: actions/upload-artifact@v2
+        with:
+          name: coverage-report
+          path: cov.html
+      
+  # соотсветствие формату написания кода
+  formatting-check:
+    needs: build-project
+    name: Format checking
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run clang-format style check.
+      uses: jidicula/clang-format-action@v4.2.0
+      with:
+        clang-format-version: '13'
+        check-path: 'detecting/src'
+  cpp-check:
+    needs: build-project
+    name: Static code analysis
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - run: sudo apt-get -qq update
+    - run: sudo apt-get install cppcheck
+    - run: sudo cppcheck --enable=all --inconclusive ./detecting/src
+

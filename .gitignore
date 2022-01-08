@@ -1,0 +1,12 @@
+detecting/cmake-build-debug/
+detecting/.idea/
+detecting/src/build/
+detecting/src/cmake-build-debug/
+detecting/src/CMakeFiles
+detecting/build/
+detecting/test/build/
+detecting/test/cmake-build-debug/
+detecting/test/CMakeFiles
+detecting/libtorch/
+detecting/libopencv/
+detecting/src/.idea/
